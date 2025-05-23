@@ -32,7 +32,15 @@ export async function GET() {
     const participantIdentity = `voice_assistant_user_${Math.floor(Math.random() * 10_000)}`;
     const roomName = `voice_assistant_room_${Math.floor(Math.random() * 10_000)}`;
     const participantToken = await createParticipantToken(
-      { identity: participantIdentity },
+      {
+        identity: participantIdentity,
+        metadata: "hieune",
+        attributes: {
+          name: "Bui Huy Hieu",
+          age: "24",
+          email: "hieune@gmail.com",
+        },
+      },
       roomName
     );
 

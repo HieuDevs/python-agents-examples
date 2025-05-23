@@ -1,5 +1,3 @@
-import { motion } from "framer-motion";
-
 export interface QuizAnswer {
   id: string;
   text: string;
@@ -21,7 +19,7 @@ export default function Quiz({ question, selectedAnswerId, onAnswerSelect }: Qui
   return (
     <div className="w-full bg-white text-black p-6 rounded-lg shadow-lg">
       <h3 className="text-lg font-semibold mb-4">{question.text}</h3>
-      
+
       <div className="space-y-3">
         {question.answers.map((answer) => (
           <div key={answer.id} className="flex items-center">
@@ -34,10 +32,7 @@ export default function Quiz({ question, selectedAnswerId, onAnswerSelect }: Qui
               onChange={() => onAnswerSelect(answer.id)}
               className="mr-3 h-4 w-4"
             />
-            <label 
-              htmlFor={`answer-${answer.id}`}
-              className="flex-1 cursor-pointer"
-            >
+            <label htmlFor={`answer-${answer.id}`} className="flex-1 cursor-pointer">
               {answer.text}
             </label>
           </div>

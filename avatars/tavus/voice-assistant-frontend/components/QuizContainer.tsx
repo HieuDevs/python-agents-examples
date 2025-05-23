@@ -1,7 +1,9 @@
-import { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { useRoomContext, useVoiceAssistant } from "@livekit/components-react";
-import Quiz, { QuizQuestion, QuizAnswer } from "./Quiz";
+import { AnimatePresence, motion } from "framer-motion";
+import { useEffect, useState } from "react";
+import Quiz, { QuizQuestion } from "./Quiz";
+import { RpcInvocationData } from "livekit-client";
+
 
 export interface SubmittedQuiz {
   id: string;
@@ -22,23 +24,21 @@ export default function QuizContainer() {
     if (!room) return;
 
     // Register RPC method to receive quizzes
-    const handleShowQuiz = async (data: any): Promise<string> => {
+    const handleShowQuiz = async (data: RpcInvocationData): Promise<string> => {
       try {
         console.log("Received quiz RPC data:", data);
-        
+
         // Check for the correct property in the RPC data
         if (!data || data.payload === undefined) {
           console.error("Invalid RPC data received:", data);
           return "Error: Invalid RPC data format";
         }
-        
+
         console.log("Parsing payload:", data.payload);
-        
+
         // Parse the payload string into a JSON object
-        const payload = typeof data.payload === 'string' 
-          ? JSON.parse(data.payload) 
-          : data.payload;
-        
+        const payload = typeof data.payload === "string" ? JSON.parse(data.payload) : data.payload;
+
         if (payload.action === "show") {
           // Reset answers when showing a new quiz
           setSelectedAnswers({});
@@ -49,7 +49,7 @@ export default function QuizContainer() {
         } else if (payload.action === "hide") {
           setIsVisible(false);
         }
-        
+
         return "Success";
       } catch (error) {
         console.error("Error processing quiz data:", error);
@@ -57,43 +57,40 @@ export default function QuizContainer() {
       }
     };
 
-    room.localParticipant.registerRpcMethod(
-      "client.quiz",
-      handleShowQuiz
-    );
+    room.registerRpcMethod("client.quiz", handleShowQuiz);
 
     return () => {
       // Clean up RPC method when component unmounts
-      room.localParticipant.unregisterRpcMethod("client.quiz");
+      room.unregisterRpcMethod("client.quiz");
     };
   }, [room]);
 
   const handleAnswerSelect = (questionId: string, answerId: string) => {
-    setSelectedAnswers(prev => ({
+    setSelectedAnswers((prev) => ({
       ...prev,
-      [questionId]: answerId
+      [questionId]: answerId,
     }));
   };
 
   const handleSubmitQuiz = async () => {
     if (!agent || !quizId) return;
-    
+
     try {
       console.log(`Submitting quiz ${quizId} to agent ${agent.identity}`);
-      
+
       const payload = {
         id: quizId,
-        answers: selectedAnswers
+        answers: selectedAnswers,
       };
-      
+
       const result = await room.localParticipant.performRpc({
         destinationIdentity: agent.identity,
         method: "agent.submitQuiz",
-        payload: JSON.stringify(payload)
+        payload: JSON.stringify(payload),
       });
-      
+
       console.log(`Quiz submission result: ${result}`);
-      
+
       // Hide the quiz after submission
       setIsVisible(false);
     } catch (error: unknown) {
@@ -104,13 +101,14 @@ export default function QuizContainer() {
     }
   };
 
-  const currentQuestion = currentQuestionIndex !== null && questions[currentQuestionIndex] 
-    ? questions[currentQuestionIndex] 
-    : null;
+  const currentQuestion =
+    currentQuestionIndex !== null && questions[currentQuestionIndex]
+      ? questions[currentQuestionIndex]
+      : null;
 
   const isLastQuestion = currentQuestionIndex === questions.length - 1;
-  const allQuestionsAnswered = questions.length > 0 && 
-    questions.every(q => selectedAnswers[q.id] !== undefined);
+  const allQuestionsAnswered =
+    questions.length > 0 && questions.every((q) => selectedAnswers[q.id] !== undefined);
 
   return (
     <AnimatePresence>
@@ -123,36 +121,37 @@ export default function QuizContainer() {
         >
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-bold">Quiz</h2>
-            <button 
-              onClick={() => setIsVisible(false)}
-              className="text-gray-400 hover:text-white"
-            >
+            <button onClick={() => setIsVisible(false)} className="text-gray-400 hover:text-white">
               ×
             </button>
           </div>
-          
-          <Quiz 
-            question={currentQuestion} 
+
+          <Quiz
+            question={currentQuestion}
             selectedAnswerId={selectedAnswers[currentQuestion.id]}
             onAnswerSelect={(answerId) => handleAnswerSelect(currentQuestion.id, answerId)}
           />
-          
+
           <div className="flex justify-between mt-4">
             <button
-              onClick={() => setCurrentQuestionIndex(prev => 
-                prev !== null ? Math.max(0, prev - 1) : 0
-              )}
+              onClick={() =>
+                setCurrentQuestionIndex((prev) => (prev !== null ? Math.max(0, prev - 1) : 0))
+              }
               disabled={currentQuestionIndex === 0}
               className="px-3 py-1 bg-blue-600 rounded disabled:opacity-50"
             >
               Previous
             </button>
-            <span>{(currentQuestionIndex ?? 0) + 1} / {questions.length}</span>
+            <span>
+              {(currentQuestionIndex ?? 0) + 1} / {questions.length}
+            </span>
             {!isLastQuestion ? (
               <button
-                onClick={() => setCurrentQuestionIndex(prev => 
-                  prev !== null ? Math.min(questions.length - 1, prev + 1) : 0
-                )}
+                onClick={() =>
+                  setCurrentQuestionIndex((prev) =>
+                    prev !== null ? Math.min(questions.length - 1, prev + 1) : 0
+                  )
+                }
                 className="px-3 py-1 bg-blue-600 rounded"
               >
                 Next
